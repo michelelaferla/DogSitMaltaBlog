@@ -1,0 +1,63 @@
+<resources>
+
+    <string name="app_name">DogSit Malta Blog</string>
+
+    <string name="home_heading">DogSit Malta Blog</string>
+    <string name="home_subheading">Create and manage dog-sitting blog posts offline.</string>
+    <string name="search_hint">Search title, message or locality</string>
+    <string name="no_posts">No matching posts yet.\nTap + to create one.</string>
+
+    <string name="create_post">Create post</string>
+    <string name="edit_post">Edit post</string>
+    <string name="editor_intro">Write a dog-sitting blog post. It is saved locally on this device.</string>
+
+    <string name="post_title_hint">Post title</string>
+    <string name="location_hint">Malta locality, e.g. Mosta</string>
+    <string name="message_hint">Write your blog message here…</string>
+
+    <string name="gallery">Gallery</string>
+    <string name="camera">Camera</string>
+    <string name="remove_image">Remove image</string>
+    <string name="save_post">Save post</string>
+
+    <string name="image_preview">Selected post image</string>
+    <string name="post_image">Blog post image</string>
+    <string name="select_post">Select post</string>
+
+    <string name="title_required">A title is required.</string>
+    <string name="message_required">A message is required.</string>
+
+    <string name="post_saved">Post saved offline.</string>
+    <string name="post_updated">Post updated.</string>
+    <string name="post_deleted">Post deleted.</string>
+    <string name="posts_deleted">Selected posts deleted.</string>
+    <string name="post_not_found">The post could not be found.</string>
+
+    <string name="image_import_failed">The selected image could not be imported.</string>
+    <string name="camera_file_failed">A file for the camera image could not be created.</string>
+
+    <string name="location_format">Location: %1$s</string>
+
+    <string name="share_email">Share / Email</string>
+    <string name="share_post_chooser">Share Post using</string>
+    <string name="publish_online">Post</string>
+    <string name="publish_selected">Publish</string>
+
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete_post">Delete post</string>
+    <string name="delete_selected">Delete</string>
+    <string name="confirm_delete_post">Delete this post permanently from the device?</string>
+    <string name="select_at_least_one">Select at least one post.</string>
+
+    <plurals name="selected_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+
+    <plurals name="confirm_bulk_delete">
+        <item quantity="one">Delete %d selected post permanently?</item>
+        <item quantity="other">Delete %d selected posts permanently?</item>
+    </plurals>
+
+</resources>

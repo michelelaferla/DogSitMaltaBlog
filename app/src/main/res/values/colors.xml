@@ -1,0 +1,9 @@
+<resources>
+    <color name="primary">#006B5E</color>
+    <color name="primary_dark">#004D43</color>
+    <color name="secondary">#F2A900</color>
+    <color name="danger">#B3261E</color>
+    <color name="selection_tint">#D9F2ED</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

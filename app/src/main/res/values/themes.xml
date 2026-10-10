@@ -1,0 +1,17 @@
+<resources>
+
+    <style name="Theme.DogSitMaltaBlog"
+        parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorSecondary">@color/secondary</item>
+
+        <!-- Use android:fontFamily for system fonts; app:fontFamily requires a @font resource or asset -->
+        <item name="android:fontFamily">sans-serif</item>
+
+        <item name="android:windowActionModeOverlay">true</item>
+
+    </style>
+
+</resources>
