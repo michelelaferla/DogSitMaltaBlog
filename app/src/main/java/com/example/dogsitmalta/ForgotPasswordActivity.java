@@ -1,33 +1,38 @@
 package com.example.dogsitmalta;
 
-import android.content.Intent;
 import android.os.Bundle;
+import android.util.Patterns;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
-
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.example.dogsitmalta.sync.SyncManager;
+import com.google.firebase.auth.FirebaseAuth;
 
+/** The user requests a Firebase reset email; no unverified on-device password override. */
 public class ForgotPasswordActivity extends AppCompatActivity {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_forgot_password);
-
-        //connect the Email EditText to the id in the Layout file
-        EditText emailField = findViewById(R.id.email);
-
-        Intent intent = getIntent();
-
-        emailField.setText(intent.getStringExtra("email"));
-
-        Button goBackButton = findViewById(R.id.back);
-        goBackButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish(); // simply closes this activity and goes back LoginActivity
+        EditText emailField=findViewById(R.id.email);
+        EditText newPass=findViewById(R.id.newPass);
+        newPass.setVisibility(View.GONE); // Password is reset using a verified email link.
+        String prefilled=getIntent().getStringExtra("email");
+        if(prefilled!=null) emailField.setText(prefilled);
+        findViewById(R.id.back).setOnClickListener(v->finish());
+        findViewById(R.id.reset).setOnClickListener(v->{
+            String email=emailField.getText().toString().trim();
+            if(!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                emailField.setError("Enter a valid email address");return;
             }
+            if(!SyncManager.isConfigured(this)) {
+                Toast.makeText(this,"Offline accounts need a separate verified recovery process",Toast.LENGTH_LONG).show();
+                return;
+            }
+            FirebaseAuth.getInstance().sendPasswordResetEmail(email)
+                .addOnCompleteListener(result->Toast.makeText(this,
+                    result.isSuccessful()?"Password reset email requested":"Unable to request reset email",
+                    Toast.LENGTH_LONG).show());
         });
     }
 }
