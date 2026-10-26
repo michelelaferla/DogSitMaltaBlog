@@ -2,16 +2,35 @@ plugins {
     id 'com.android.application'
 }
 
+// The google-services plugin is applied only after firebase setup is complete.
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}
+
+// Read the Maps key from local.properties (Android Studio's machine-local file).
+// Fall back to a normal Gradle project property or environment variable.
+// Do not commit a real Maps key to version control.
+def localMapsProperties = new Properties()
+def localMapsFile = rootProject.file('local.properties')
+if (localMapsFile.exists()) {
+    localMapsFile.withInputStream { stream -> localMapsProperties.load(stream) }
+}
+def configuredMapsKey = localMapsProperties.getProperty('MAPS_API_KEY')?.trim()
+if (!configuredMapsKey) configuredMapsKey = project.findProperty('MAPS_API_KEY')?.toString()?.trim()
+if (!configuredMapsKey) configuredMapsKey = System.getenv('MAPS_API_KEY')?.trim()
+if (!configuredMapsKey) configuredMapsKey = 'MAPS_API_KEY_NOT_CONFIGURED'
+
 android {
     namespace 'com.example.dogsitmalta'
     compileSdk 36
 
     defaultConfig {
         applicationId "com.example.dogsitmalta"
-        minSdk 23
+        minSdk 24
         targetSdk 36
         versionCode 1
-        versionName "1.0"
+        versionName "1.1-workshops"
+        manifestPlaceholders = [MAPS_API_KEY: configuredMapsKey]
     }
 
     buildTypes {
@@ -34,4 +53,10 @@ dependencies {
     implementation 'androidx.activity:activity:1.10.1'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'com.google.android.material:material:1.12.0'
+    implementation platform('com.google.firebase:firebase-bom:35.0.2')
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.google.android.gms:play-services-maps:20.0.0'
+    // Single foreground location fix for pre-selecting the pet's position.
+    implementation 'com.google.android.gms:play-services-location:21.4.0'
 }

@@ -3,13 +3,13 @@
     <string name="app_name">DogSit Malta Blog</string>
 
     <string name="home_heading">DogSit Malta Blog</string>
-    <string name="home_subheading">Create and manage dog-sitting blog posts offline.</string>
+    <string name="home_subheading">Create and manage dog-sitting requests.</string>
     <string name="search_hint">Search title, message or locality</string>
     <string name="no_posts">No matching posts yet.\nTap + to create one.</string>
 
     <string name="create_post">Create post</string>
     <string name="edit_post">Edit post</string>
-    <string name="editor_intro">Write a dog-sitting blog post. It is saved locally on this device.</string>
+    <string name="editor_intro">Here is where all active requests will show.</string>
 
     <string name="post_title_hint">Post title</string>
     <string name="location_hint">Malta locality, e.g. Mosta</string>
@@ -38,8 +38,8 @@
 
     <string name="location_format">Location: %1$s</string>
 
-    <string name="share_email">Share / Email</string>
-    <string name="share_post_chooser">Share Post using</string>
+    <string name="share_email">Share</string>
+    <string name="share_post_chooser">Share using</string>
     <string name="publish_online">Post</string>
     <string name="publish_selected">Publish</string>
 
@@ -47,7 +47,7 @@
     <string name="cancel">Cancel</string>
     <string name="delete_post">Delete post</string>
     <string name="delete_selected">Delete</string>
-    <string name="confirm_delete_post">Delete this post permanently from the device?</string>
+    <string name="confirm_delete_post">Delete this post permanently?</string>
     <string name="select_at_least_one">Select at least one post.</string>
 
     <plurals name="selected_count">
@@ -60,4 +60,20 @@
         <item quantity="other">Delete %d selected posts permanently?</item>
     </plurals>
 
+    <string name="pick_map_location">Choose point on map</string>
+    <string name="map_picker_instructions">Your current position is selected by default with permission. Tap the map to choose another point; its locality name will be filled in automatically when available.</string>
+    <string name="map_use_my_location">Use my current location</string>
+    <string name="map_finding_location">Finding your current location…</string>
+    <string name="map_permission_denied">Location access not granted. Tap the map to choose a point manually.</string>
+    <string name="map_location_unavailable">Could not determine your location. Enable Location in device settings or tap the map manually.</string>
+    <string name="map_selected_point">Selected post location</string>
+    <string name="map_picker_none">No map point selected</string>
+    <string name="map_picker_confirm">Use this location</string>
+    <string name="map_resolving_locality">Looking up locality…\n%1$.5f, %2$.5f</string>
+    <string name="map_locality_and_coordinates">%1$s\n%2$.5f, %3$.5f</string>
+    <string name="map_locality_not_found">Locality could not be found. Enter it manually in the editor.\n%1$.5f, %2$.5f</string>
+    <string name="map_enter_locality_manually">Location selected. Locality lookup was unavailable; please enter the locality manually.</string>
+    <string name="map_locality_required">Please enter a locality for the selected map point.</string>
+    <string name="map_open_locality">Open %1$s in your maps app</string>
+    <string name="map_no_map_app">No app is available to open the map.</string>
 </resources>
