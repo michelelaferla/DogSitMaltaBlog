@@ -105,7 +105,7 @@ public class PostDetailActivity extends AppCompatActivity {
         titleText.setText(post.getTitle());
         messageText.setText(post.getMessage());
 
-        if (!MapIntentUtils.canOpen(post)) {
+        if (MapIntentUtils.canOpen(post)) {
             locationText.setVisibility(View.GONE);
             locationText.setOnClickListener(null);
             locationText.setClickable(false);

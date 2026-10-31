@@ -16,8 +16,8 @@ public final class MapIntentUtils {
     private MapIntentUtils() { }
 
     public static boolean canOpen(BlogPost post) {
-        return hasCoordinates(post) || (post != null && post.getLocation() != null
-                && !post.getLocation().trim().isEmpty());
+        return !hasCoordinates(post) && (post == null || post.getLocation() == null
+                || post.getLocation().trim().isEmpty());
     }
 
     public static boolean hasCoordinates(BlogPost post) {
@@ -36,7 +36,7 @@ public final class MapIntentUtils {
     }
 
     public static void openSavedLocation(Context context, BlogPost post) {
-        if (!canOpen(post)) return;
+        if (canOpen(post)) return;
         String query;
         if (hasCoordinates(post)) {
             // Coordinates pinpoint the post rather than the centre of the locality.

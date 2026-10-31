@@ -95,6 +95,4 @@ public class BlogPost {
     public void setOwnerUid(String value) { ownerUid = value; }
     public boolean isDeleted() { return deleted; }
     public void setDeleted(boolean value) { deleted = value; }
-    public boolean isDirty() { return dirty; }
-    public void setDirty(boolean value) { dirty = value; }
 }

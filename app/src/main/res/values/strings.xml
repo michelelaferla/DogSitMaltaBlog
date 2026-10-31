@@ -18,7 +18,7 @@
     <string name="gallery">Gallery</string>
     <string name="camera">Camera</string>
     <string name="remove_image">Remove image</string>
-    <string name="save_post">Save post</string>
+    <string name="save_post">Publish</string>
 
     <string name="image_preview">Selected post image</string>
     <string name="post_image">Blog post image</string>
