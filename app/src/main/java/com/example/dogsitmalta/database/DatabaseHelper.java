@@ -57,11 +57,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
     private ContentValues postValues(BlogPost post, long now, boolean creating) {
         ContentValues v = new ContentValues();
-        v.put(TITLE,post.getTitle()); v.put(MESSAGE,post.getMessage());
-        v.put(LOCATION,post.getLocation()); v.put(IMAGE,post.getImagePath());
+        v.put(TITLE,post.getTitle());
+        v.put(MESSAGE,post.getMessage());
+        v.put(LOCATION,post.getLocation());
+        v.put(IMAGE,post.getImagePath());
         if (post.getLatitude() == null) v.putNull(LAT); else v.put(LAT,post.getLatitude());
         if (post.getLongitude() == null) v.putNull(LNG); else v.put(LNG,post.getLongitude());
-        v.put(UPDATED,now); v.put(DIRTY,1); v.put(DELETED,post.isDeleted()?1:0);
+        v.put(UPDATED,now); v.put(DIRTY,1);
+        v.put(DELETED,post.isDeleted()?1:0);
         if (creating) { v.put(CREATED,now); v.put(REMOTE,UUID.randomUUID().toString()); v.put(OWNER,post.getOwnerUid()); }
         return v;
     }

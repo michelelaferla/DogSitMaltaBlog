@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/map_picker_instructions"
+        android:padding="8dp"
+        android:layout_margin="12dp" />
+
+    <Button android:id="@+id/buttonUseMyLocation"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/map_use_my_location" />
+
+    <fragment
+        android:id="@+id/mapPicker"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        />
+
+    <TextView
+        android:id="@+id/pickedCoordinates"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="@string/map_picker_none"
+        android:layout_margin="12dp"/>
+
+    <Button
+        android:id="@+id/buttonConfirmLocation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/map_picker_confirm"
+        android:layout_margin="12dp"/>
+</LinearLayout>
