@@ -110,7 +110,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         p.setLongitude(c.isNull(gi)?null:c.getDouble(gi));
         p.setRemoteId(c.getString(c.getColumnIndexOrThrow(REMOTE)));
         p.setOwnerUid(c.getString(c.getColumnIndexOrThrow(OWNER)));
-        p.setDirty(c.getInt(c.getColumnIndexOrThrow(DIRTY))==1);
         p.setDeleted(c.getInt(c.getColumnIndexOrThrow(DELETED))==1);
         return p;
     }

@@ -115,7 +115,7 @@ public class BlogPostAdapter
 
         holder.title.setText(post.getTitle());
 
-        if (!MapIntentUtils.canOpen(post)) {
+        if (MapIntentUtils.canOpen(post)) {
             holder.location.setVisibility(View.GONE);
             holder.location.setOnClickListener(null);
             holder.location.setClickable(false);
