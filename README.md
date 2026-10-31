@@ -121,3 +121,4 @@ app/src/main/java/com/example/dogsitmalta/
 
 `local.properties` is intentionally not included because Android Studio creates
 it for the local computer's Android SDK path.
+We will build the app as we go along. The code added here is just for demonstation purposes
