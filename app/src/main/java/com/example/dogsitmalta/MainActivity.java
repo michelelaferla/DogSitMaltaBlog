@@ -17,7 +17,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.dogsitmalta.adapter.BlogPostAdapter;
-import com.example.dogsitmalta.database.DatabaseHelper;
+import com.example.dogsitmalta.database.repos.RoomPostRepository;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import com.example.dogsitmalta.model.BlogPost;
 import com.example.dogsitmalta.utils.ImageUtils;
 import com.example.dogsitmalta.sync.SyncManager;
@@ -32,7 +35,9 @@ public class MainActivity
     private static final int ACTION_PUBLISH = 1001;
     private static final int ACTION_DELETE = 1002;
 
-    private DatabaseHelper databaseHelper;
+    private RoomPostRepository posts;
+    private final ExecutorService disk = Executors.newSingleThreadExecutor();
+    private final AtomicInteger searchGeneration = new AtomicInteger();
     private BlogPostAdapter adapter;
     private SearchView searchView;
     private TextView emptyView;
@@ -46,7 +51,7 @@ public class MainActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        databaseHelper = new DatabaseHelper(this);
+        posts = new RoomPostRepository(this);
 
         RecyclerView recyclerPosts = findViewById(R.id.recyclerPosts);
         searchView = findViewById(R.id.searchPosts);
@@ -112,14 +117,19 @@ public class MainActivity
     }
 
     private void refreshPosts(String searchText) {
-        List<BlogPost> posts =
-                databaseHelper.searchPosts(searchText);
-
-        adapter.setPosts(posts);
-
-        emptyView.setVisibility(
-                posts.isEmpty() ? View.VISIBLE : View.GONE
-        );
+        final int generation = searchGeneration.incrementAndGet();
+        disk.execute(() -> {
+            try {
+                List<BlogPost> results = posts.search(searchText);
+                runOnUiThread(() -> {
+                    if (generation != searchGeneration.get() || isFinishing() || isDestroyed()) return;
+                    adapter.setPosts(results);
+                    emptyView.setVisibility(results.isEmpty() ? View.VISIBLE : View.GONE);
+                });
+            } catch (Exception e) {
+                android.util.Log.e("RoomDemo", "Unable to load posts", e);
+            }
+        });
     }
 
     @Override
@@ -232,36 +242,31 @@ public class MainActivity
 
     private void deleteSelectedPosts() {
         List<Long> selectedIds = adapter.getSelectedIds();
-
-        for (Long id : selectedIds) {
-            BlogPost post = databaseHelper.getPost(id);
-
-            if (post != null) {
-                ImageUtils.deleteInternalImage(post.getImagePath());
+        if (actionMode != null) actionMode.finish();
+        disk.execute(() -> {
+            try {
+                java.util.List<String> images = new java.util.ArrayList<>();
+                for (Long id : selectedIds) {
+                    BlogPost p = posts.get(id);
+                    if (p != null && p.getImagePath() != null) images.add(p.getImagePath());
+                }
+                posts.deleteMany(selectedIds);
+                for (String path : images) ImageUtils.deleteInternalImage(path);
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    refreshPosts(searchView.getQuery().toString());
+                    new SyncManager(this).sync(() -> refreshPosts(searchView.getQuery().toString()));
+                    Toast.makeText(this, R.string.posts_deleted, Toast.LENGTH_SHORT).show();
+                });
+            } catch (Exception e) {
+                android.util.Log.e("RoomDemo", "Delete failed", e);
             }
-        }
-
-        databaseHelper.deletePosts(selectedIds);
-
-        if (actionMode != null) {
-            actionMode.finish();
-        }
-
-        refreshPosts(searchView.getQuery().toString());
-        new SyncManager(this).sync(() -> refreshPosts(searchView.getQuery().toString()));
-
-        Toast.makeText(
-                this,
-                R.string.posts_deleted,
-                Toast.LENGTH_SHORT
-        ).show();
+        });
     }
 
     @Override
     protected void onDestroy() {
-        if (databaseHelper != null) {
-            databaseHelper.close();
-        }
+        disk.shutdown();
 
         super.onDestroy();
     }

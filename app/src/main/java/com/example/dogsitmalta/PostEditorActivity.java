@@ -14,7 +14,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
-import com.example.dogsitmalta.database.DatabaseHelper;
+import com.example.dogsitmalta.database.repos.RoomPostRepository;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import com.example.dogsitmalta.model.BlogPost;
 import com.example.dogsitmalta.utils.ImageUtils;
 import com.example.dogsitmalta.sync.SyncManager;
@@ -33,12 +35,14 @@ public class PostEditorActivity extends AppCompatActivity {
     private EditText editMessage;
     private ImageView imagePreview;
 
-    private DatabaseHelper databaseHelper;
+    private RoomPostRepository posts;
+    private final ExecutorService disk = Executors.newSingleThreadExecutor();
 
     private long postId = -1L;
     private String originalImagePath;
     private String currentImagePath;
     private boolean saved = false;
+    private boolean saveInProgress = false;
     private Double selectedLat, selectedLng;
     private TextView textCoordinates;
 
@@ -85,7 +89,7 @@ public class PostEditorActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_post_editor);
 
-        databaseHelper = new DatabaseHelper(this);
+        posts = new RoomPostRepository(this);
 
         editTitle = findViewById(R.id.editTitle);
         editLocation = findViewById(R.id.editLocation);
@@ -140,29 +144,25 @@ public class PostEditorActivity extends AppCompatActivity {
     }
 
     private void loadExistingPost() {
-        BlogPost post =
-                databaseHelper.getPost(postId);
-
-        if (post == null) {
-            Toast.makeText(
-                    this,
-                    R.string.post_not_found,
-                    Toast.LENGTH_SHORT
-            ).show();
-
-            finish();
-            return;
-        }
-
-        editTitle.setText(post.getTitle());
-        editLocation.setText(post.getLocation());
-        selectedLat = post.getLatitude();selectedLng = post.getLongitude();showCoordinates();
-        editMessage.setText(post.getMessage());
-
-        originalImagePath = post.getImagePath();
-        currentImagePath = originalImagePath;
-
-        displayCurrentImage();
+        disk.execute(() -> {
+            BlogPost post = posts.get(postId);
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (post == null) {
+                    Toast.makeText(this, R.string.post_not_found, Toast.LENGTH_SHORT).show();
+                    finish(); return;
+                }
+            editTitle.setText(post.getTitle());
+            editLocation.setText(post.getLocation());
+            selectedLat = post.getLatitude();selectedLng = post.getLongitude();showCoordinates();
+            editMessage.setText(post.getMessage());
+    
+            originalImagePath = post.getImagePath();
+            currentImagePath = originalImagePath;
+    
+            displayCurrentImage();
+            });
+        });
     }
 
     private void handleGalleryImage(Uri sourceUri) {
@@ -301,39 +301,39 @@ public class PostEditorActivity extends AppCompatActivity {
         com.google.firebase.auth.FirebaseUser signedIn = SyncManager.currentUser(this);
         if (signedIn != null) post.setOwnerUid(signedIn.getUid());
 
-        if (postId >= 0) {
-            databaseHelper.updatePost(post);
-
-            if (originalImagePath != null &&
-                    !originalImagePath.equals(currentImagePath)) {
-                ImageUtils.deleteInternalImage(
-                        originalImagePath
-                );
+        saveInProgress = true;
+        saveButtonDisabled();
+        disk.execute(() -> {
+            try {
+                if (postId >= 0) posts.update(post); else posts.insert(post);
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    if (originalImagePath != null && !originalImagePath.equals(currentImagePath)) {
+                        ImageUtils.deleteInternalImage(originalImagePath);
+                    }
+                    saved = true;
+                    Toast.makeText(this, postId >= 0 ? R.string.post_updated : R.string.post_saved,
+                            Toast.LENGTH_SHORT).show();
+                    finish();
+                });
+            } catch (Exception e) {
+                android.util.Log.e("RoomDemo", "Save failed", e);
+                runOnUiThread(() -> {
+                    saveInProgress = false;
+                    findViewById(R.id.buttonSave).setEnabled(true);
+                    Toast.makeText(this, "Could not save post", Toast.LENGTH_LONG).show();
+                });
             }
+        });
+    }
 
-            Toast.makeText(
-                    this,
-                    R.string.post_updated,
-                    Toast.LENGTH_SHORT
-            ).show();
-
-        } else {
-            databaseHelper.insertPost(post);
-
-            Toast.makeText(
-                    this,
-                    R.string.post_saved,
-                    Toast.LENGTH_SHORT
-            ).show();
-        }
-
-        saved = true;
-        finish();
+    private void saveButtonDisabled() {
+        findViewById(R.id.buttonSave).setEnabled(false);
     }
 
     @Override
     protected void onDestroy() {
-        if (!saved &&
+        if (!saved && !saveInProgress &&
                 currentImagePath != null &&
                 !currentImagePath.equals(originalImagePath)) {
             ImageUtils.deleteInternalImage(
@@ -341,9 +341,7 @@ public class PostEditorActivity extends AppCompatActivity {
             );
         }
 
-        if (databaseHelper != null) {
-            databaseHelper.close();
-        }
+        disk.shutdown();
 
         super.onDestroy();
     }
