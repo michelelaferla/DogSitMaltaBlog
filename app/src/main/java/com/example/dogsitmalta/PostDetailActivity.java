@@ -12,7 +12,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.dogsitmalta.database.DatabaseHelper;
+import com.example.dogsitmalta.database.repos.RoomPostRepository;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import com.example.dogsitmalta.model.BlogPost;
 import com.example.dogsitmalta.utils.ImageUtils;
 import com.example.dogsitmalta.utils.MapIntentUtils;
@@ -26,7 +28,8 @@ public class PostDetailActivity extends AppCompatActivity {
 
     public static final String EXTRA_POST_ID = "post_id";
 
-    private DatabaseHelper databaseHelper;
+    private RoomPostRepository posts;
+    private final ExecutorService disk = Executors.newSingleThreadExecutor();
 
     private long postId;
     private BlogPost post;
@@ -42,7 +45,7 @@ public class PostDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_post_detail);
 
-        databaseHelper = new DatabaseHelper(this);
+        posts = new RoomPostRepository(this);
 
         postId = getIntent().getLongExtra(EXTRA_POST_ID, -1L);
 
@@ -88,62 +91,59 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     private void loadPost() {
-        post =
-                databaseHelper.getPost(postId);
-
-        if (post == null) {
-            Toast.makeText(
-                    this,
-                    R.string.post_not_found,
-                    Toast.LENGTH_SHORT
-            ).show();
-
-            finish();
-            return;
-        }
-
-        titleText.setText(post.getTitle());
-        messageText.setText(post.getMessage());
-
-        if (MapIntentUtils.canOpen(post)) {
-            locationText.setVisibility(View.GONE);
-            locationText.setOnClickListener(null);
-            locationText.setClickable(false);
-        } else {
-            locationText.setVisibility(View.VISIBLE);
-            locationText.setText(getString(R.string.location_format,
-                    MapIntentUtils.locationLabel(this, post)));
-            locationText.setContentDescription(getString(R.string.map_open_locality,
-                    MapIntentUtils.locationLabel(this, post)));
-            locationText.setPaintFlags(locationText.getPaintFlags()
-                    | android.graphics.Paint.UNDERLINE_TEXT_FLAG);
-            locationText.setOnClickListener(v -> MapIntentUtils.openSavedLocation(this, post));
-        }
-
-        dateText.setText(
-                DateFormat.getDateTimeInstance(
-                        DateFormat.LONG,
-                        DateFormat.SHORT
-                ).format(new Date(post.getCreatedAt()))
-        );
-
-        String imagePath = post.getImagePath();
-
-        if (imagePath != null && !imagePath.trim().isEmpty()) {
-            File imageFile = new File(imagePath);
-
-            if (imageFile.exists()) {
-                postImage.setImageURI(null);
-                postImage.setImageURI(
-                        Uri.fromFile(imageFile)
-                );
-                postImage.setVisibility(View.VISIBLE);
+        disk.execute(() -> {
+            BlogPost found = posts.get(postId);
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                post = found;
+                if (post == null) {
+                    Toast.makeText(this, R.string.post_not_found, Toast.LENGTH_SHORT).show();
+                    finish(); return;
+                }
+            titleText.setText(post.getTitle());
+            messageText.setText(post.getMessage());
+    
+            if (MapIntentUtils.canOpen(post)) {
+                locationText.setVisibility(View.GONE);
+                locationText.setOnClickListener(null);
+                locationText.setClickable(false);
+            } else {
+                locationText.setVisibility(View.VISIBLE);
+                locationText.setText(getString(R.string.location_format,
+                        MapIntentUtils.locationLabel(this, post)));
+                locationText.setContentDescription(getString(R.string.map_open_locality,
+                        MapIntentUtils.locationLabel(this, post)));
+                locationText.setPaintFlags(locationText.getPaintFlags()
+                        | android.graphics.Paint.UNDERLINE_TEXT_FLAG);
+                locationText.setOnClickListener(v -> MapIntentUtils.openSavedLocation(this, post));
+            }
+    
+            dateText.setText(
+                    DateFormat.getDateTimeInstance(
+                            DateFormat.LONG,
+                            DateFormat.SHORT
+                    ).format(new Date(post.getCreatedAt()))
+            );
+    
+            String imagePath = post.getImagePath();
+    
+            if (imagePath != null && !imagePath.trim().isEmpty()) {
+                File imageFile = new File(imagePath);
+    
+                if (imageFile.exists()) {
+                    postImage.setImageURI(null);
+                    postImage.setImageURI(
+                            Uri.fromFile(imageFile)
+                    );
+                    postImage.setVisibility(View.VISIBLE);
+                } else {
+                    postImage.setVisibility(View.GONE);
+                }
             } else {
                 postImage.setVisibility(View.GONE);
             }
-        } else {
-            postImage.setVisibility(View.GONE);
-        }
+            });
+        });
     }
 
     private void editPost() {
@@ -175,26 +175,21 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     private void deletePost() {
-        databaseHelper.deletePost(postId);
-
-        ImageUtils.deleteInternalImage(
-                post.getImagePath()
-        );
-
-        Toast.makeText(
-                this,
-                R.string.post_deleted,
-                Toast.LENGTH_SHORT
-        ).show();
-
-        finish();
+        final String path = post == null ? null : post.getImagePath();
+        disk.execute(() -> {
+            posts.delete(postId);
+            ImageUtils.deleteInternalImage(path);
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                Toast.makeText(this, R.string.post_deleted, Toast.LENGTH_SHORT).show();
+                finish();
+            });
+        });
     }
 
     @Override
     protected void onDestroy() {
-        if (databaseHelper != null) {
-            databaseHelper.close();
-        }
+        disk.shutdown();
 
         super.onDestroy();
     }
