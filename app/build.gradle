@@ -24,18 +24,23 @@ android {
     namespace 'com.example.dogsitmalta'
     compileSdk 36
 
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
     defaultConfig {
         applicationId "com.example.dogsitmalta"
         minSdk 24
         targetSdk 36
         versionCode 1
         versionName "1.1-workshops"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders = [MAPS_API_KEY: configuredMapsKey]
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
                     'proguard-rules.pro'
         }
@@ -61,4 +66,17 @@ dependencies {
     implementation 'com.google.android.gms:play-services-maps:20.0.0'
     // Single foreground location fix for pre-selecting the pet's position.
     implementation 'com.google.android.gms:play-services-location:21.4.0'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:5.14.0'
+
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'androidx.test:rules:1.6.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-intents:3.6.1'
+    androidTestImplementation 'androidx.room:room-testing:2.8.5'
+
 }
+
