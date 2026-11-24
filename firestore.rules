@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['UserName','UserSurname','UserEmail',
+           'UserIsActive','UserDateCreated','UserDateUpdated','profile_updated_at']);
+      allow delete: if false;
+      match /posts/{postId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow create, update: if request.auth != null && request.auth.uid == uid
+          && request.resource.data.owner_uid == uid
+          && request.resource.data.keys().hasOnly(['title','message','location','latitude',
+            'longitude','created_at','updated_at','is_deleted','owner_uid']);
+        allow delete: if false; // synchronize tombstones rather than deleting
+      }
+    }
+  }
+}

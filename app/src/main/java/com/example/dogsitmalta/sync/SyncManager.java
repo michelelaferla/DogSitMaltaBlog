@@ -2,7 +2,8 @@ package com.example.dogsitmalta.sync;
 
 import android.content.Context;
 import android.util.Log;
-import com.example.dogsitmalta.database.DatabaseHelper;
+import com.example.dogsitmalta.database.repos.RoomUserRepository;
+import com.example.dogsitmalta.database.repos.RoomPostRepository;
 import com.example.dogsitmalta.model.BlogPost;
 import com.example.dogsitmalta.model.User;
 import com.google.firebase.FirebaseApp;
@@ -11,7 +12,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Source;
-import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Demonstration two-way sync: local SQLite remains primary, with cloud owner-scoped copies.
+/** Demonstration two-way sync: local Room remains primary, with cloud owner-scoped copies.
  * Not a production synchronization engine: concurrent edits use updated_at (last-writer-wins).
  * Image files remain on the device; coordinate fields ARE synchronized. */
 public final class SyncManager {
@@ -38,31 +39,36 @@ public final class SyncManager {
         if(me==null)return;
         String uid=me.getUid();
         FirebaseFirestore firestore=FirebaseFirestore.getInstance();
-        DatabaseHelper local=new DatabaseHelper(appContext);
+        RoomUserRepository local=new RoomUserRepository(appContext);
+        RoomPostRepository roomPosts = new RoomPostRepository(appContext);
         worker.execute(()-> {
-            List<BlogPost> pending=local.getPendingPostsForSync(uid);
+            List<BlogPost> pending=roomPosts.pending(uid);
             // Reconcile the USERS table before the POSTS table.
             // A server profile with a later profile_updated_at wins over stale local data.
             reconcileProfile(firestore, uid, local);
-            if(pending.isEmpty()) { download(firestore,uid,local,uiAfterSync);return; }
+            if(pending.isEmpty()) { download(firestore,uid,local,roomPosts,uiAfterSync);return; }
             AtomicInteger remaining=new AtomicInteger(pending.size());
             for(BlogPost p:pending) {
                 Map<String,Object> document=new HashMap<>();
-                document.put("title",p.getTitle());document.put("message",p.getMessage());
-                document.put("location",p.getLocation());document.put("latitude",p.getLatitude());
+                document.put("title",p.getTitle());
+                document.put("message",p.getMessage());
+                document.put("location",p.getLocation());
+                document.put("latitude",p.getLatitude());
                 document.put("longitude",p.getLongitude());
-                document.put("created_at",p.getCreatedAt());document.put("updated_at",p.getUpdatedAt());
-                document.put("is_deleted",p.isDeleted());document.put("owner_uid",uid);
+                document.put("created_at",p.getCreatedAt());
+                document.put("updated_at",p.getUpdatedAt());
+                document.put("is_deleted",p.isDeleted());
+                document.put("owner_uid",uid);
                 firestore.collection("users").document(uid).collection("posts")
                   .document(p.getRemoteId()).set(document).addOnCompleteListener(result->{
-                      if(result.isSuccessful()) worker.execute(()->local.markPostSynced(p.getId(),p.getUpdatedAt(),uid));
+                      if(result.isSuccessful()) worker.execute(()->roomPosts.markSynced(p.getId(),p.getUpdatedAt(),uid));
                       else Log.w(TAG,"Post sync upload failed",result.getException());
-                      if(remaining.decrementAndGet()==0)download(firestore,uid,local,uiAfterSync);
+                      if(remaining.decrementAndGet()==0)download(firestore,uid,local,roomPosts,uiAfterSync);
                   });
             }
         });
     }
-    private void reconcileProfile(FirebaseFirestore db, String uid, DatabaseHelper local) {
+    private void reconcileProfile(FirebaseFirestore db, String uid, RoomUserRepository local) {
         db.collection("users").document(uid).get(Source.SERVER)
             .addOnSuccessListener(profile -> worker.execute(() -> {
                 User current = local.findUserByUid(uid);
@@ -98,7 +104,7 @@ public final class SyncManager {
         db.collection("users").document(uid).set(profile)
             .addOnFailureListener(err->Log.w(TAG,"Profile upload failed",err));
     }
-    private void download(FirebaseFirestore db,String uid,DatabaseHelper local,Runnable uiAfterSync) {
+    private void download(FirebaseFirestore db,String uid,RoomUserRepository local,RoomPostRepository roomPosts,Runnable uiAfterSync) {
         db.collection("users").document(uid).collection("posts").get(Source.SERVER)
             .addOnSuccessListener(results->worker.execute(()-> {
                 for(DocumentSnapshot doc:results.getDocuments()) {
@@ -111,11 +117,10 @@ public final class SyncManager {
                     p.setCreatedAt(created==null?System.currentTimeMillis():created);
                     p.setUpdatedAt(updated==null?p.getCreatedAt():updated);
                     p.setDeleted(Boolean.TRUE.equals(doc.getBoolean("is_deleted")));
-                    local.upsertCloudPost(p,uid);
+                    roomPosts.upsertCloud(p,uid);
                 }
-                local.close();
                 if(uiAfterSync!=null)new android.os.Handler(android.os.Looper.getMainLooper()).post(uiAfterSync);
             }))
-            .addOnFailureListener(e->{Log.w(TAG,"Download failed",e);local.close();});
+            .addOnFailureListener(e->{Log.w(TAG,"Download failed",e);});
     }
 }
